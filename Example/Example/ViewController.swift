@@ -10,12 +10,13 @@ import ZLPhotoBrowser
 import Photos
 
 class ViewController: UIViewController {
-
     var collectionView: UICollectionView!
     
     var selectedImages: [UIImage] = []
     
     var selectedAssets: [PHAsset] = []
+    
+    var selectedResults: [ZLResultModel] = []
     
     var isOriginal = false
     
@@ -25,11 +26,14 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         
         setupUI()
+        
+        ZLPhotoUIConfiguration.default()
+            .customAlertClass(CustomAlertController.self)
     }
     
     func setupUI() {
         title = "Main"
-        self.view.backgroundColor = .white
+        view.backgroundColor = .white
         
         func createBtn(_ title: String, _ action: Selector) -> UIButton {
             let btn = UIButton(type: .custom)
@@ -44,7 +48,7 @@ class ViewController: UIViewController {
         
         let configBtn = createBtn("Configuration", #selector(configureClick))
         view.addSubview(configBtn)
-        configBtn.snp.makeConstraints { (make) in
+        configBtn.snp.makeConstraints { make in
             if #available(iOS 11.0, *) {
                 make.top.equalTo(view.snp.topMargin).offset(20)
             } else {
@@ -56,42 +60,42 @@ class ViewController: UIViewController {
         
         let configBtn_cn = createBtn("相册配置 (中文)", #selector(cn_configureClick))
         view.addSubview(configBtn_cn)
-        configBtn_cn.snp.makeConstraints { (make) in
+        configBtn_cn.snp.makeConstraints { make in
             make.top.equalTo(configBtn.snp.top)
             make.left.equalTo(configBtn.snp.right).offset(30)
         }
         
         let previewSelectBtn = createBtn("Preview selection", #selector(previewSelectPhoto))
         view.addSubview(previewSelectBtn)
-        previewSelectBtn.snp.makeConstraints { (make) in
+        previewSelectBtn.snp.makeConstraints { make in
             make.top.equalTo(configBtn.snp.bottom).offset(20)
             make.left.equalTo(configBtn.snp.left)
         }
         
         let libratySelectBtn = createBtn("Library selection", #selector(librarySelectPhoto))
         view.addSubview(libratySelectBtn)
-        libratySelectBtn.snp.makeConstraints { (make) in
+        libratySelectBtn.snp.makeConstraints { make in
             make.top.equalTo(previewSelectBtn.snp.top)
             make.left.equalTo(previewSelectBtn.snp.right).offset(20)
         }
         
         let cameraBtn = createBtn("Custom camera", #selector(showCamera))
         view.addSubview(cameraBtn)
-        cameraBtn.snp.makeConstraints { (make) in
+        cameraBtn.snp.makeConstraints { make in
             make.left.equalTo(configBtn.snp.left)
             make.top.equalTo(previewSelectBtn.snp.bottom).offset(20)
         }
         
         let previewLocalAndNetImageBtn = createBtn("Preview local and net image", #selector(previewLocalAndNetImage))
         view.addSubview(previewLocalAndNetImageBtn)
-        previewLocalAndNetImageBtn.snp.makeConstraints { (make) in
+        previewLocalAndNetImageBtn.snp.makeConstraints { make in
             make.left.equalTo(cameraBtn.snp.right).offset(20)
             make.centerY.equalTo(cameraBtn)
         }
         
         let wechatMomentDemoBtn = createBtn("Create WeChat moment Demo", #selector(createWeChatMomentDemo))
         view.addSubview(wechatMomentDemoBtn)
-        wechatMomentDemoBtn.snp.makeConstraints { (make) in
+        wechatMomentDemoBtn.snp.makeConstraints { make in
             make.left.equalTo(configBtn.snp.left)
             make.top.equalTo(cameraBtn.snp.bottom).offset(20)
         }
@@ -101,7 +105,7 @@ class ViewController: UIViewController {
         takeLabel.textColor = .black
         takeLabel.text = "Record selected photos："
         view.addSubview(takeLabel)
-        takeLabel.snp.makeConstraints { (make) in
+        takeLabel.snp.makeConstraints { make in
             make.left.equalTo(configBtn.snp.left)
             make.top.equalTo(wechatMomentDemoBtn.snp.bottom).offset(20)
         }
@@ -109,7 +113,7 @@ class ViewController: UIViewController {
         takeSelectedAssetsSwitch = UISwitch()
         takeSelectedAssetsSwitch.isOn = false
         view.addSubview(takeSelectedAssetsSwitch)
-        takeSelectedAssetsSwitch.snp.makeConstraints { (make) in
+        takeSelectedAssetsSwitch.snp.makeConstraints { make in
             make.left.equalTo(takeLabel.snp.right).offset(20)
             make.centerY.equalTo(takeLabel.snp.centerY)
         }
@@ -120,7 +124,7 @@ class ViewController: UIViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
         view.addSubview(collectionView)
-        collectionView.snp.makeConstraints { (make) in
+        collectionView.snp.makeConstraints { make in
             make.top.equalTo(takeLabel.snp.bottom).offset(30)
             make.left.bottom.right.equalToSuperview()
         }
@@ -147,21 +151,42 @@ class ViewController: UIViewController {
     }
     
     func showImagePicker(_ preview: Bool) {
-        let editImageConfiguration = ZLPhotoConfiguration.default().editImageConfiguration
-        editImageConfiguration
+        let minItemSpacing: CGFloat = 2
+        let minLineSpacing: CGFloat = 2
+        
+        // Custom UI
+        ZLPhotoUIConfiguration.default()
+//            .navBarColor(.white)
+//            .navViewBlurEffectOfAlbumList(nil)
+//            .indexLabelBgColor(.black)
+//            .indexLabelTextColor(.white)
+            .minimumInteritemSpacing(minItemSpacing)
+            .minimumLineSpacing(minLineSpacing)
+            .columnCountBlock { Int(ceil($0 / (428.0 / 4))) }
+        
+        // Custom image editor
+        ZLPhotoConfiguration.default()
+            .editImageConfiguration
             .imageStickerContainerView(ImageStickerContainerView())
-//            .tools([.draw, .filter, .adjust, .mosaic])
+            .canRedo(true)
+//            .tools([.draw, .clip, .mosaic, .filter])
 //            .adjustTools([.brightness, .contrast, .saturation])
 //            .clipRatios([.custom, .circle, .wh1x1, .wh3x4, .wh16x9, ZLImageClipRatio(title: "2 : 1", whRatio: 2 / 1)])
 //            .imageStickerContainerView(ImageStickerContainerView())
 //            .filters([.normal, .process, ZLFilter(name: "custom", applier: ZLCustomFilter.hazeRemovalFilter)])
         
+        /*
         ZLPhotoConfiguration.default()
-            .editImageConfiguration(editImageConfiguration)
-            .navCancelButtonStyle(.image)
+            .cameraConfiguration
+            .allowRecordVideo(false)
+            .allowSwitchCamera(false)
+            .showFlashSwitch(true)
+         */
+        
+        ZLPhotoConfiguration.default()
             // You can first determine whether the asset is allowed to be selected.
-            .canSelectAsset { asset, _ in
-                return true
+            .canSelectAsset { _ in
+                true
             }
             .noAuthorityCallback { type in
                 switch type {
@@ -173,19 +198,35 @@ class ViewController: UIViewController {
                     debugPrint("No microphone authority")
                 }
             }
+//            .operateBeforeDoneAction { currVC, block in
+//                // Do something before select photo result callback, and then call block to continue done action.
+//                block()
+//            }
         
-        let ac = ZLPhotoPreviewSheet(selectedAssets: takeSelectedAssetsSwitch.isOn ? selectedAssets : [])
-        ac.selectImageBlock = { [weak self] (images, assets, isOriginal) in
-            self?.selectedImages = images
-            self?.selectedAssets = assets
-            self?.isOriginal = isOriginal
-            self?.collectionView.reloadData()
-            debugPrint("\(images)   \(assets)   \(isOriginal)")
+        /// Using this init method, you can continue editing the selected photo
+        let ac = ZLPhotoPreviewSheet(results: takeSelectedAssetsSwitch.isOn ? selectedResults : nil)
+        
+//        let ac = ZLPhotoPreviewSheet(selectedAssets: takeSelectedAssetsSwitch.isOn ? selectedAssets : nil)
+        
+        ac.selectImageBlock = { [weak self] results, isOriginal in
+            guard let `self` = self else { return }
+            self.selectedResults = results
+            self.selectedImages = results.map { $0.image }
+            self.selectedAssets = results.map { $0.asset }
+            self.isOriginal = isOriginal
+            self.collectionView.reloadData()
+            debugPrint("images: \(self.selectedImages)")
+            debugPrint("assets: \(self.selectedAssets)")
+            debugPrint("isEdited: \(results.map { $0.isEdited })")
+            debugPrint("isOriginal: \(isOriginal)")
+            
+//            guard !self.selectedAssets.isEmpty else { return }
+//            self?.saveAsset(self.selectedAssets[0])
         }
         ac.cancelBlock = {
             debugPrint("cancel select")
         }
-        ac.selectImageRequestErrorBlock = { (errorAssets, errorIndexs) in
+        ac.selectImageRequestErrorBlock = { errorAssets, errorIndexs in
             debugPrint("fetch error assets: \(errorAssets), error indexs: \(errorIndexs)")
         }
         
@@ -193,6 +234,28 @@ class ViewController: UIViewController {
             ac.showPreview(animate: true, sender: self)
         } else {
             ac.showPhotoLibrary(sender: self)
+        }
+    }
+    
+    func saveAsset(_ asset: PHAsset) {
+        let filePath: String
+        if asset.mediaType == .video {
+            filePath = NSTemporaryDirectory().appendingFormat("%@.%@", UUID().uuidString, "mp4")
+        } else {
+            filePath = NSTemporaryDirectory().appendingFormat("%@.%@", UUID().uuidString, "jpg")
+        }
+        
+        debugPrint("---- \(filePath)")
+        let url = URL(fileURLWithPath: filePath)
+        ZLPhotoManager.saveAsset(asset, toFile: url) { _ in
+            do {
+                if asset.mediaType == .video {
+                    _ = AVURLAsset(url: url)
+                } else {
+                    let data = try Data(contentsOf: url)
+                    _ = UIImage(data: data)
+                }
+            } catch {}
         }
     }
     
@@ -219,7 +282,7 @@ class ViewController: UIViewController {
         )
         
         let videoSuffixs = ["mp4", "mov", "avi", "rmvb", "rm", "flv", "3gp", "wmv", "vob", "dat", "m4v", "f4v", "mkv"] // and more suffixs
-        let vc = ZLImagePreviewController(datas: datas, index: 0, showSelectBtn: true) { (url) -> ZLURLType in
+        let vc = ZLImagePreviewController(datas: datas, index: 0, showSelectBtn: true) { url -> ZLURLType in
             // Just for demo.
             if url.absoluteString == netVideoUrlString {
                 return .video
@@ -229,19 +292,23 @@ class ViewController: UIViewController {
             } else {
                 return .image
             }
-        } urlImageLoader: { (url, imageView, progress, loadFinish) in
-            imageView.kf.setImage(with: url) { (receivedSize, totalSize) in
+        } urlImageLoader: { url, imageView, progress, loadFinish in
+            imageView.kf.setImage(with: url) { receivedSize, totalSize in
                 let percentage = (CGFloat(receivedSize) / CGFloat(totalSize))
                 debugPrint("\(percentage)")
                 progress(percentage)
-            } completionHandler: { (_) in
+            } completionHandler: { _ in
                 loadFinish()
             }
         }
         
-        vc.doneBlock = { (datas) in
+        vc.doneBlock = { datas in
             debugPrint(datas)
         }
+        
+//        vc.longPressBlock = { (controller, image, index) in
+//            debugPrint(String(describing: controller), String(describing: image), index)
+//        }
         
         vc.modalPresentationStyle = .fullScreen
         showDetailViewController(vc, sender: nil)
@@ -249,20 +316,22 @@ class ViewController: UIViewController {
     
     @objc func showCamera() {
         let camera = ZLCustomCamera()
-        camera.takeDoneBlock = { [weak self] (image, videoUrl) in
+        camera.takeDoneBlock = { [weak self] image, videoUrl in
             self?.save(image: image, videoUrl: videoUrl)
         }
         showDetailViewController(camera, sender: nil)
     }
     
     func save(image: UIImage?, videoUrl: URL?) {
-        let hud = ZLProgressHUD(style: ZLPhotoConfiguration.default().hudStyle)
+        let hud = ZLProgressHUD(style: ZLPhotoUIConfiguration.default().hudStyle)
         if let image = image {
             hud.show()
-            ZLPhotoManager.saveImageToAlbum(image: image) { [weak self] (suc, asset) in
-                if suc, let at = asset {
+            ZLPhotoManager.saveImageToAlbum(image: image) { [weak self] suc, asset in
+                if suc, let asset = asset {
+                    let resultModel = ZLResultModel(asset: asset, image: image, isEdited: false, index: 0)
+                    self?.selectedResults = [resultModel]
                     self?.selectedImages = [image]
-                    self?.selectedAssets = [at]
+                    self?.selectedAssets = [asset]
                     self?.collectionView.reloadData()
                 } else {
                     debugPrint("保存图片到相册失败")
@@ -271,9 +340,9 @@ class ViewController: UIViewController {
             }
         } else if let videoUrl = videoUrl {
             hud.show()
-            ZLPhotoManager.saveVideoToAlbum(url: videoUrl) { [weak self] (suc, asset) in
-                if suc, let at = asset {
-                    self?.fetchImage(for: at)
+            ZLPhotoManager.saveVideoToAlbum(url: videoUrl) { [weak self] suc, asset in
+                if suc, let asset = asset {
+                    self?.fetchImage(for: asset)
                 } else {
                     debugPrint("保存视频到相册失败")
                 }
@@ -287,14 +356,16 @@ class ViewController: UIViewController {
         option.resizeMode = .fast
         option.isNetworkAccessAllowed = true
         
-        PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: 100, height: 100), contentMode: .aspectFill, options: option) { (image, info) in
+        PHImageManager.default().requestImage(for: asset, targetSize: CGSize(width: 100, height: 100), contentMode: .aspectFill, options: option) { image, info in
             var downloadFinished = false
             if let info = info {
                 downloadFinished = !(info[PHImageCancelledKey] as? Bool ?? false) && (info[PHImageErrorKey] == nil)
             }
             let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool ?? false)
-            if downloadFinished, !isDegraded {
-                self.selectedImages = [image!]
+            if downloadFinished, !isDegraded, let image = image {
+                let resultModel = ZLResultModel(asset: asset, image: image, isEdited: false, index: 0)
+                self.selectedResults = [resultModel]
+                self.selectedImages = [image]
                 self.selectedAssets = [asset]
                 self.collectionView.reloadData()
             }
@@ -305,12 +376,9 @@ class ViewController: UIViewController {
         let vc = WeChatMomentDemoViewController()
         show(vc, sender: nil)
     }
-    
 }
 
-
 extension ViewController: UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
-    
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
         return 2
     }
@@ -343,15 +411,20 @@ extension ViewController: UICollectionViewDataSource, UICollectionViewDelegateFl
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         let ac = ZLPhotoPreviewSheet()
-        ac.selectImageBlock = { [weak self] (images, assets, isOriginal) in
-            self?.selectedImages = images
-            self?.selectedAssets = assets
-            self?.isOriginal = isOriginal
-            self?.collectionView.reloadData()
-            debugPrint("\(images)   \(assets)   \(isOriginal)")
+        
+        ac.selectImageBlock = { [weak self] results, isOriginal in
+            guard let `self` = self else { return }
+            self.selectedResults = results
+            self.selectedImages = results.map { $0.image }
+            self.selectedAssets = results.map { $0.asset }
+            self.isOriginal = isOriginal
+            self.collectionView.reloadData()
+            debugPrint("images: \(self.selectedImages)")
+            debugPrint("assets: \(self.selectedAssets)")
+            debugPrint("isEdited: \(results.map { $0.isEdited })")
+            debugPrint("isOriginal: \(isOriginal)")
         }
         
         ac.previewAssets(sender: self, assets: selectedAssets, index: indexPath.row, isOriginal: isOriginal, showBottomViewAndSelectBtn: true)
     }
-    
 }

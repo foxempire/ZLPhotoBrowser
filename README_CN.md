@@ -1,14 +1,13 @@
-[![Version](https://img.shields.io/cocoapods/v/ZLPhotoBrowser.svg?style=flat)](http://cocoadocs.org/docsets/ZLPhotoBrowser)
+[![Version](https://img.shields.io/cocoapods/v/ZLPhotoBrowser.svg?style=flat)](https://cocoapods.org/pods/ZLPhotoBrowser)
 [![Carthage compatible](https://img.shields.io/badge/Carthage-compatible-brightgreen.svg?style=flat)](https://github.com/Carthage/Carthage)
-[![SwiftPM compatible](https://img.shields.io/badge/SwiftPM-supported-E57141.svg)](https://swift.org/package-manager/)
-[![License](https://img.shields.io/cocoapods/l/ZLPhotoBrowser.svg?style=flat)](http://cocoadocs.org/docsets/ZLPhotoBrowser)
-[![Platform](https://img.shields.io/cocoapods/p/ZLPhotoBrowser.svg?style=flat)](http://cocoadocs.org/docsets/ZLPhotoBrowser)
+[![SPM supported](https://img.shields.io/badge/SwiftPM-supported-E57141.svg)](https://swift.org/package-manager/)
+[![License](https://img.shields.io/cocoapods/l/ZLPhotoBrowser.svg?style=flat)](https://raw.githubusercontent.com/longitachi/ZLPhotoBrowser/master/LICENSE)
+[![Platform](https://img.shields.io/cocoapods/p/ZLPhotoBrowser.svg?style=flat)](https://github.com/longitachi/ZLPhotoBrowser/wiki)
 ![Language](https://img.shields.io/badge/Language-%20Swift%20-E57141.svg)
 
 ![image](https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/preview_with_title.png)
 
 ----------------------------------------
-# Warning: 如果您的App在中国地区上架，请更新至最新版本(>=4.1.9)。[issue](https://github.com/longitachi/ZLPhotoBrowser/issues/650)
 
 [English](https://github.com/longitachi/ZLPhotoBrowser/blob/master/README.md) | 简体中文
 
@@ -69,7 +68,7 @@ ZLPhotoBrowser是一款微信样式的图片选择器，支持预览/相册内�
  - 快速选择
  ```
  let ps = ZLPhotoPreviewSheet()
- ps.selectImageBlock = { [weak self] (images, assets, isOriginal) in
+ ps.selectImageBlock = { [weak self] results, isOriginal in
      // your code
  }
  ps.showPreview(animate: true, sender: self)
@@ -78,7 +77,7 @@ ZLPhotoBrowser是一款微信样式的图片选择器，支持预览/相册内�
  - 直接进入相册选择
  ```
  let ps = ZLPhotoPreviewSheet()
- ps.selectImageBlock = { [weak self] (images, assets, isOriginal) in
+ ps.selectImageBlock = { [weak self] results, isOriginal in
      // your code
  }
  ps.showPhotoLibrary(sender: self)
@@ -103,29 +102,34 @@ ZLPhotoBrowser是一款微信样式的图片选择器，支持预览/相册内�
 ### <a id="更新日志"></a>更新日志
 > [更多更新日志](https://github.com/longitachi/ZLPhotoBrowser/blob/master/CHANGELOG.md)
 ```
-● 4.2.0
-  新增:
-    编辑图片时支持调整图片亮度、对比度和饱和度;
-    支持印尼语;
-    抽出图片编辑相关配置类：ZLEditImageConfiguration.
+● 4.3.9
+  Add:
+    支持自定义小图界面的行间距、列间距及列的数量;
+    将相机相关的配置从ZLPhotoConfiguration移动到ZLCameraConfiguration;
+    更新相机界面UI样式;
+    支持拍照后直接回调;
+    贴纸增加最大放大比例;
+● 4.3.8
+  Add:
+    支持当最大选择数为1时，点击小图后直接选择完成.
+    调整图片滑动条添加横滑样式.
   Fix:
-    Crash when calling showPhotoLibrary in UISplitViewController.
-● 4.2.0
-  新增:
-    支持链式调用;
-    优化自定义相机代码;
-    小图界面取消按钮添加图片类型;
+    修复合并视频时尺寸错误的bug.
+    修复滤镜和调整图片时，redo按钮没有隐藏的bug.
+● 4.3.7
+  Add:
+    修改selectImageBlock回调参数为ZLResultModel, 删除shouldAnialysisAsset参数;
+    图片编辑器界面适配iPad;
+    支持阿拉伯语;
+    涂鸦和马赛克支持反撤销;
+    支持修改图片编辑器中icon的tint color;
   Fix:
-    编辑视频未操作进度条的情况下也会重建一个新视频.[#655]
-    某些条件下，无法取消选择已选的照片.[#659]
-● 4.1.9
-  Fix:
-    移除CallKit
+    修复编辑视频时获取视频版本错误的bug.
 ...
 ```
 
 ### <a id="国际化语言"></a>国际化语言
-🇨🇳 中文简/繁, 🇺🇸 英语, 🇯🇵 日语, 🇫🇷 法语, 🇩🇪 德语, 🇷🇺 俄语, 🇻🇳 越南语, 🇰🇷 韩语, 🇲🇾 马来语, 🇮🇹 意大利语, 🇮🇩印度尼西亚语.
+🇨🇳 中文简/繁, 🇺🇸 英语, 🇯🇵 日语, 🇫🇷 法语, 🇩🇪 德语, 🇷🇺 俄语, 🇻🇳 越南语, 🇰🇷 韩语, 🇲🇾 马来语, 🇮🇹 意大利语, 🇮🇩 印度尼西亚语, 🇪🇸 西班牙语, 🇵🇹 葡萄牙语, 🇹🇷 土耳其语, 🇸🇦 阿拉伯语.
 
 ### <a id="安装方法"></a>使用方法
 
@@ -139,7 +143,7 @@ ZLPhotoBrowser是一款微信样式的图片选择器，支持预览/相册内�
   
 * Carthage
   * 1.在Cartfile 中添加 `github "longitachi/ZLPhotoBrowser" ~> 4.0.0`
-  * 2.执行 `carthage update ZLPhotoBrowser --platform iOS`
+  * 2.执行 `$ carthage update`
   > 如果执行时遇到`Building universal frameworks with common architectures is not possible. The device and simulator slices for "ZLPhotoBrowser" both build for: arm64
   Rebuild with --use-xcframeworks to create an xcframework bundle instead.`这个错误，点击[这里](https://github.com/Carthage/Carthage/blob/master/Documentation/Xcode12Workaround.md)
   
@@ -150,7 +154,7 @@ ZLPhotoBrowser是一款微信样式的图片选择器，支持预览/相册内�
 
 ### <a id="支持"></a> 支持
 * 给个[**★ Star**](#)
-* 请喝☕️ <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/aliPay.png" width = "100" height = "125" /> or <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/wechatPay.png" width = "100" height = "125" />  or <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/Paypal.png" width = "150" height = "125" />
+* 请喝☕️ <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/ap.png" width = "100" height = "125" /> or <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/wp.png" width = "100" height = "125" />  or <img src="https://github.com/longitachi/ImageFolder/blob/master/ZLPhotoBrowser/pp.png" width = "150" height = "125" />
 
 ### <a id="效果图"></a> 效果图
 - 选择

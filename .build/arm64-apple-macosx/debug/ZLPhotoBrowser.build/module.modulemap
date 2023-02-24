@@ -1,0 +1,4 @@
+module ZLPhotoBrowser {
+    header "/Users/irobot/Work/share/forks/ZLPhotoBrowser/.build/arm64-apple-macosx/debug/ZLPhotoBrowser.build/ZLPhotoBrowser-Swift.h"
+    requires objc
+}

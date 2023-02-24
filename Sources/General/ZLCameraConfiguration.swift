@@ -40,8 +40,8 @@ public class ZLCameraConfiguration: NSObject {
                 return .hd1280x720
             case .hd1920x1080:
                 return .hd1920x1080
-            case .hd4K3840x2160:
-                return .hd4K3840x2160
+            case .photo:
+                return .photo
             }
         }
         
@@ -49,10 +49,10 @@ public class ZLCameraConfiguration: NSObject {
         case vga640x480
         case hd1280x720
         case hd1920x1080
-        case hd4K3840x2160
+        case photo
     }
     
-    @objc public enum FocusMode: Int  {
+    @objc public enum FocusMode: Int {
         var avFocusMode: AVCaptureDevice.FocusMode {
             switch self {
             case .autoFocus:
@@ -66,7 +66,7 @@ public class ZLCameraConfiguration: NSObject {
         case continuousAutoFocus
     }
     
-    @objc public enum ExposureMode: Int  {
+    @objc public enum ExposureMode: Int {
         var avFocusMode: AVCaptureDevice.ExposureMode {
             switch self {
             case .autoExpose:
@@ -78,35 +78,6 @@ public class ZLCameraConfiguration: NSObject {
         
         case autoExpose
         case continuousAutoExposure
-    }
-    
-    @objc public enum FlashMode: Int  {
-        var avFlashMode: AVCaptureDevice.FlashMode {
-            switch self {
-            case .auto:
-                return .auto
-            case .on:
-                return .on
-            case .off:
-                return .off
-            }
-        }
-        
-        // 转系统相机
-        var imagePickerFlashMode: UIImagePickerController.CameraFlashMode {
-            switch self {
-            case .auto:
-                return .auto
-            case .on:
-                return .on
-            case .off:
-                return .off
-            }
-        }
-        
-        case auto
-        case on
-        case off
     }
     
     @objc public enum VideoExportType: Int {
@@ -132,8 +103,52 @@ public class ZLCameraConfiguration: NSObject {
         case mp4
     }
     
-    /// Video resolution. Defaults to hd1280x720.
-    @objc public var sessionPreset: ZLCameraConfiguration.CaptureSessionPreset = .hd1280x720
+    private var pri_allowTakePhoto = true
+    /// Allow taking photos in the camera (Need allowSelectImage to be true). Defaults to true.
+    @objc public var allowTakePhoto: Bool {
+        get {
+            return pri_allowTakePhoto && ZLPhotoConfiguration.default().allowSelectImage
+        }
+        set {
+            pri_allowTakePhoto = newValue
+        }
+    }
+    
+    private var pri_allowRecordVideo = true
+    /// Allow recording in the camera (Need allowSelectVideo to be true). Defaults to true.
+    @objc public var allowRecordVideo: Bool {
+        get {
+            return pri_allowRecordVideo && ZLPhotoConfiguration.default().allowSelectVideo
+        }
+        set {
+            pri_allowRecordVideo = newValue
+        }
+    }
+    
+    private var pri_minRecordDuration: Second = 0
+    /// Minimum recording duration. Defaults to 0.
+    @objc public var minRecordDuration: Second {
+        get {
+            return pri_minRecordDuration
+        }
+        set {
+            pri_minRecordDuration = max(0, newValue)
+        }
+    }
+    
+    private var pri_maxRecordDuration: Second = 20
+    /// Maximum recording duration. Defaults to 10, minimum is 1.
+    @objc public var maxRecordDuration: Second {
+        get {
+            return pri_maxRecordDuration
+        }
+        set {
+            pri_maxRecordDuration = max(1, newValue)
+        }
+    }
+    
+    /// Video resolution. Defaults to hd1920x1080.
+    @objc public var sessionPreset: ZLCameraConfiguration.CaptureSessionPreset = .hd1920x1080
     
     /// Camera focus mode. Defaults to continuousAutoFocus
     @objc public var focusMode: ZLCameraConfiguration.FocusMode = .continuousAutoFocus
@@ -141,45 +156,76 @@ public class ZLCameraConfiguration: NSObject {
     /// Camera exposure mode. Defaults to continuousAutoExposure
     @objc public var exposureMode: ZLCameraConfiguration.ExposureMode = .continuousAutoExposure
     
-    /// Camera flahs mode. Default is off. Defaults to off.
-    @objc public var flashMode: ZLCameraConfiguration.FlashMode = .off
+    /// Camera flahs switch. Defaults to true.
+    @objc public var showFlashSwitch = true
+    
+    /// Whether to support switch camera. Defaults to true.
+    @objc public var allowSwitchCamera = true
     
     /// Video export format for recording video and editing video. Defaults to mov.
     @objc public var videoExportType: ZLCameraConfiguration.VideoExportType = .mov
-    
 }
 
 // MARK: chaining
-extension ZLCameraConfiguration {
+
+public extension ZLCameraConfiguration {
+    @discardableResult
+    func allowTakePhoto(_ value: Bool) -> ZLCameraConfiguration {
+        allowTakePhoto = value
+        return self
+    }
     
     @discardableResult
-    public func sessionPreset(_ sessionPreset: ZLCameraConfiguration.CaptureSessionPreset) -> ZLCameraConfiguration {
+    func allowRecordVideo(_ value: Bool) -> ZLCameraConfiguration {
+        allowRecordVideo = value
+        return self
+    }
+    
+    @discardableResult
+    func minRecordDuration(_ duration: Second) -> ZLCameraConfiguration {
+        minRecordDuration = duration
+        return self
+    }
+    
+    @discardableResult
+    func maxRecordDuration(_ duration: Second) -> ZLCameraConfiguration {
+        maxRecordDuration = duration
+        return self
+    }
+    
+    @discardableResult
+    func sessionPreset(_ sessionPreset: ZLCameraConfiguration.CaptureSessionPreset) -> ZLCameraConfiguration {
         self.sessionPreset = sessionPreset
         return self
     }
     
     @discardableResult
-    public func focusMode(_ mode: ZLCameraConfiguration.FocusMode) -> ZLCameraConfiguration {
+    func focusMode(_ mode: ZLCameraConfiguration.FocusMode) -> ZLCameraConfiguration {
         focusMode = mode
         return self
     }
     
     @discardableResult
-    public func exposureMode(_ mode: ZLCameraConfiguration.ExposureMode) -> ZLCameraConfiguration {
+    func exposureMode(_ mode: ZLCameraConfiguration.ExposureMode) -> ZLCameraConfiguration {
         exposureMode = mode
         return self
     }
     
     @discardableResult
-    public func flashMode(_ mode: ZLCameraConfiguration.FlashMode) -> ZLCameraConfiguration {
-        flashMode = mode
+    func showFlashSwitch(_ value: Bool) -> ZLCameraConfiguration {
+        showFlashSwitch = value
         return self
     }
     
     @discardableResult
-    public func videoExportType(_ type: ZLCameraConfiguration.VideoExportType) -> ZLCameraConfiguration {
-        videoExportType = type
+    func allowSwitchCamera(_ value: Bool) -> ZLCameraConfiguration {
+        allowSwitchCamera = value
         return self
     }
     
+    @discardableResult
+    func videoExportType(_ type: ZLCameraConfiguration.VideoExportType) -> ZLCameraConfiguration {
+        videoExportType = type
+        return self
+    }
 }

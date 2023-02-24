@@ -26,11 +26,10 @@
 
 import UIKit
 
-let ZLMaxImageWidth: CGFloat = 600
+let ZLMaxImageWidth: CGFloat = 500
 
-struct ZLLayout {
-    
-    static let navTitleFont = getFont(17)
+enum ZLLayout {
+    static let navTitleFont: UIFont = .zl.font(ofSize: 17)
     
     static let bottomToolViewH: CGFloat = 55
     
@@ -38,36 +37,9 @@ struct ZLLayout {
     
     static let bottomToolBtnY: CGFloat = 10
     
-    static let bottomToolTitleFont = getFont(17)
+    static let bottomToolTitleFont: UIFont = .zl.font(ofSize: 17)
     
     static let bottomToolBtnCornerRadius: CGFloat = 5
-    
-    static let thumbCollectionViewItemSpacing: CGFloat = 2
-    
-    static let thumbCollectionViewLineSpacing: CGFloat = 2
-    
-}
-
-func zlRGB(_ red: CGFloat, _ green: CGFloat, _ blue: CGFloat) -> UIColor {
-    return UIColor(red: red / 255, green: green / 255, blue: blue / 255, alpha: 1)
-}
-
-func getImage(_ named: String) -> UIImage? {
-    if ZLCustomImageDeploy.imageNames.contains(named), let image = UIImage(named: named) {
-        return image
-    }
-    if let image = ZLCustomImageDeploy.imageForKey[named] {
-        return image
-    }
-    return UIImage(named: named, in: Bundle.zlPhotoBrowserBundle, compatibleWith: nil)
-}
-
-func getFont(_ size: CGFloat) -> UIFont {
-    guard let name = ZLCustomFontDeploy.fontName else {
-        return UIFont.systemFont(ofSize: size)
-    }
-    
-    return UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
 }
 
 func markSelected(source: inout [ZLPhotoModel], selected: inout [ZLPhotoModel]) {
@@ -87,7 +59,7 @@ func markSelected(source: inout [ZLPhotoModel], selected: inout [ZLPhotoModel]) 
         selIdAndIndex[m.ident] = index
     }
     
-    source.forEach { (m) in
+    source.forEach { m in
         if selIds[m.ident] == true {
             m.isSelected = true
             m.editImage = selEditImage[m.ident]
@@ -113,11 +85,11 @@ func getAppName() -> String {
 }
 
 func deviceIsiPhone() -> Bool {
-    return UI_USER_INTERFACE_IDIOM() == .phone
+    return UIDevice.current.userInterfaceIdiom == .phone
 }
 
 func deviceIsiPad() -> Bool {
-    return UI_USER_INTERFACE_IDIOM() == .pad
+    return UIDevice.current.userInterfaceIdiom == .pad
 }
 
 func deviceSafeAreaInsets() -> UIEdgeInsets {
@@ -130,27 +102,35 @@ func deviceSafeAreaInsets() -> UIEdgeInsets {
     return insets
 }
 
-func getSpringAnimation() -> CAKeyframeAnimation {
-    let animate = CAKeyframeAnimation(keyPath: "transform")
-    animate.duration = ZLPhotoConfiguration.default().selectBtnAnimationDuration
-    animate.isRemovedOnCompletion = true
-    animate.fillMode = .forwards
-    
-    animate.values = [CATransform3DMakeScale(0.7, 0.7, 1),
-                      CATransform3DMakeScale(1.2, 1.2, 1),
-                      CATransform3DMakeScale(0.8, 0.8, 1),
-                      CATransform3DMakeScale(1, 1, 1)]
-    return animate
+func deviceIsFringeScreen() -> Bool {
+    return deviceSafeAreaInsets().top > 0
+}
+
+func isSmallScreen() -> Bool {
+    return UIScreen.main.bounds.height <= 812
 }
 
 func showAlertView(_ message: String, _ sender: UIViewController?) {
-    let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-    let action = UIAlertAction(title: localLanguageTextValue(.ok), style: .default, handler: nil)
-    alert.addAction(action)
+    let action = ZLCustomAlertAction(title: localLanguageTextValue(.ok), style: .default, handler: nil)
+    showAlertController(title: nil, message: message, style: .alert, actions: [action], sender: sender)
+}
+
+func showAlertController(title: String?, message: String?, style: ZLCustomAlertStyle, actions: [ZLCustomAlertAction], sender: UIViewController?) {
+    if let alertClass = ZLPhotoUIConfiguration.default().customAlertClass {
+        let alert = alertClass.alert(title: title, message: message ?? "", style: style)
+        actions.forEach { alert.addAction($0) }
+        alert.show(with: sender)
+        return
+    }
+    
+    let alert = UIAlertController(title: title, message: message, preferredStyle: style.toSystemAlertStyle)
+    actions
+        .map { $0.toSystemAlertAction() }
+        .forEach { alert.addAction($0) }
     if deviceIsiPad() {
         alert.popoverPresentationController?.sourceView = sender?.view
     }
-    (sender ?? UIApplication.shared.keyWindow?.rootViewController)?.showDetailViewController(alert, sender: nil)
+    (sender ?? UIApplication.shared.keyWindow?.rootViewController)?.zl.showAlertController(alert)
 }
 
 func canAddModel(_ model: ZLPhotoModel, selectedModels: [ZLPhotoModel]?, sender: UIViewController?, showAlert: Bool = true) -> Bool {
@@ -196,12 +176,22 @@ func ZLMainAsync(after: TimeInterval = 0, handler: @escaping (() -> Void)) {
             handler()
         }
     } else {
-        DispatchQueue.main.async {
+        if Thread.isMainThread {
             handler()
+        } else {
+            DispatchQueue.main.async {
+                handler()
+            }
         }
     }
 }
 
 func zl_debugPrint(_ message: Any...) {
 //    message.forEach { debugPrint($0) }
+}
+
+func zlLoggerInDebug(_ lastMessage: @autoclosure () -> String, file: StaticString = #file, line: UInt = #line) {
+    #if DEBUG
+        print("\(file):\(line): \(lastMessage())")
+    #endif
 }
